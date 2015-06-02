@@ -15,7 +15,7 @@ function AfghanCorrelationTests(filename)
 addpath('../Common_functions')
 
 %Setup time
-dt = 1 ;  
+dt = 1 ;  % The delta time is one day 
 N = 302;
 t = 0:dt:dt*(N-1);  
 
@@ -27,10 +27,13 @@ load('../AfghanDataAllDay')
 % Arrange into weeks
 numofweeks = ceil(length(spikeAll)/7);
 Weeknum = zeros(numofweeks,1);
+
+% TODO, NOTE, seems to discretize into very rough 36*36 grid
 shift = [57.5,28.5];  % Scale and shift so AFG roughly fits into a 36 x 36 square with bottom LH corner on origin
 scale = [2,3.3];
 i=1;
 k=1;
+
 % hold on
 while i < length(spikeAll)
    spikeAllWeekData(k).Coords = [];

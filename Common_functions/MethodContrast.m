@@ -1,4 +1,8 @@
 function [A,l] = MethodContrast(r,g,ktype,epsilon,a0)
+% TODO, read more on this, TODO, later
+%
+% in the Log Gaussian Cox Process, could just use the summary statistics to
+% make inference
 
 % Fit a GRBF to the log-PACF or log-PCCF using the method of contrast.
 % (Moller 1998)
