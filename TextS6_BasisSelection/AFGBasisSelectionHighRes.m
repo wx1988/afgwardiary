@@ -48,7 +48,6 @@ Basis.phi = LocalisedKernelPhi(s1,s2,Basis.mu1,Basis.mu2,Basis.sigma2,Basis.sigm
 % Get points
 % -----------------------------------------------
 
-
 load('ProcessedWeekData')
 AllAFGevents = [];
 for i = 1:length(spikeAllWeekData)
@@ -61,6 +60,15 @@ FilterBasis(AllAFGevents,Basis,l,shift,scale);
 %Auxiliary functions
 %---------------------------
 function Basisnew = FilterBasis(spikes,Basis,l,shift,scale)
+% Not clear.
+% seems to count how many number of events is related to each kernel
+%
+% TODO, unused, spikes, list of structs containing the coordinates of the event
+% Basis, the structure to do basis inference
+% TODO, l, not use, 3.5 not clear
+% shift, scale, how to transform the grid back to the longitude and
+% latitude
+
 N = length(spikes);
 i = 1;
 rad = 1.3;
@@ -68,11 +76,14 @@ rad = 1.3;
 % Load shapefiles
 Countrybounds = shaperead('admin1_poly_32.shp','UseGeoCoords',true);
 
-% For each basis see whether it is significantly outside of Afghanistan. If
-% it is remove the basis.
+% For each basis see whether it is significantly outside of Afghanistan. 
+% If it is remove the basis.
+% The significantly is define by checking the polygon and a threshold to
+% boundary
 while(i <= Basis.nx)
     if ~inpolygon(Basis.mu1(i)/scale(1)+shift(1),Basis.mu2(i)/scale(2)+shift(2),Countrybounds.Lon',Countrybounds.Lat')
         if p_poly_dist(Basis.mu1(i)/scale(1)+shift(1),Basis.mu2(i)/scale(2)+shift(2),Countrybounds.Lon',Countrybounds.Lat') > 0.4
+            % The following action is removing one basis.
             Basis.nx = Basis.nx-1;
             Basis.mu1(i) = [];
             Basis.mu2(i) = [];
@@ -84,7 +95,6 @@ while(i <= Basis.nx)
     i = i+1;
 end
 
-
 % For each basis see how many events are within its scope. If there are
 % only a few corresponding to a background of exp(-3.5) or less then remove basis.
 i=1;
@@ -93,7 +103,10 @@ while(i <= Basis.nx)
     %     pntsinbasis(i) = sum(distances < 1.2);
     pntsinbasis(i) = sum(distances < rad);
     %     if pntsinbasis(i) < 24
-    if pntsinbasis(i) < exp(-3.5)*313*pi*rad^2 %Bg.noise*numofweeks*area
+    
+    % NOTE, What does the number of -3.5 means? 
+    % What is background noise?
+    if pntsinbasis(i) < exp(-3.5) * 313 * pi*rad^2 %Bg.noise*numofweeks*area
         Basis.nx = Basis.nx-1;
         Basis.mu1(i) = [];
         Basis.mu2(i) = [];
@@ -106,6 +119,16 @@ end
 Basisnew = Basis;
 save('AFGBasis','Basis')
 
+
+%---------------------
+% This is mentioned in page 3 of SI
+% Second, localized reconstruction kernels are placed at regular intervals
+% throughout the spatial domain
+%
+% The Phi is the notation for kernel, the actual value for Phi are 101*101
+% matrix, which the discretized value. There are a total of 256 kernel at
+% the begining, so the data is 101*101*256
+%---------------------
 function [phi] = LocalisedKernelPhi(s1,s2,mu1,mu2,sigma21,sigma22)
 
 % Evaluate the CGRBF centred on (mu1,mu2) with stds (sigma21,sigma22) on
@@ -129,6 +152,7 @@ for i = 1:nx
     s_on1 = s1(ilow1:ihigh1);
     s_on2 = s2(ilow2:ihigh2);
     [Delta1,Delta2] = meshgrid(beta1*abs(s_on1 - mu1(i)),beta2*abs(s_on2 - mu2(i)));
-    phi(ilow2:ihigh2,ilow1:ihigh1,i) = ((2*pi - Delta1).*(1 + cos(Delta1)/2) + 3/2*sin(Delta1))./(3*pi).*((2*pi - Delta2).*(1 + cos(Delta2)/2) + 3/2*sin(Delta2))./(3*pi);
+    phi(ilow2:ihigh2,ilow1:ihigh1,i) = ...
+        ((2*pi - Delta1).*(1 + cos(Delta1)/2) + 3/2*sin(Delta1))./(3*pi).*((2*pi - Delta2).*(1 + cos(Delta2)/2) + 3/2*sin(Delta2))./(3*pi);
 end
 
